@@ -17,9 +17,9 @@ int main() {
   for (unsigned int y = 0; y < HT; ++y) {
     for (unsigned int x = 0; x < WT; ++x) {
       int i = 3 * (y * WT + x);
-      image_data[i] = x;
-      image_data[i + 1] = y;
-      image_data[i + 2] = 0;
+      image_data[i] = 65;
+      image_data[i + 1] = 105;
+      image_data[i + 2] = 225;
     }
   }
   save_image(image_data);
