@@ -1,5 +1,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
+#include <cstdio>
 #include <iostream>
 #include <stb_image_write.h>
 
@@ -21,7 +22,9 @@ int main() {
       image_data[i + 1] = 105;
       image_data[i + 2] = 225;
     }
+    std::printf("\rScanlines remaining: %d\x1b[0K", HT - y - 1);
   }
+  std::printf("\nDone! 🎉\n");
   save_image(image_data);
   return 0;
 }
