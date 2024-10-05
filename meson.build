@@ -1,4 +1,4 @@
-project('ya_raytracer_rt', ['cuda', 'cpp'], license : '0BSD', default_options : ['cpp_std=c++17'])
+project('ya_raytracer_rt', ['cpp'], license : '0BSD', default_options : ['cpp_std=c++23'])
 
 inc = include_directories('include')
 
