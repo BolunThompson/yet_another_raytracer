@@ -1,33 +1,54 @@
 {
-  description = "kvm sectorlisp";
-
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:cachix/devenv-nixpkgs/rolling";
+    systems.url = "github:nix-systems/default";
+    devenv.url = "github:cachix/devenv";
+    devenv.inputs.nixpkgs.follows = "nixpkgs";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs }:
+  nixConfig = {
+    extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
+    extra-substituters = "https://devenv.cachix.org";
+  };
+
+  outputs = { self, nixpkgs, devenv, systems, ... } @ inputs:
     let
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      stdenv = pkgs.llvmPackages_19.stdenv;
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
     in
     {
-      devShells.x86_64-linux.default = pkgs.mkShell.override {inherit stdenv;} {
-        name = "KVM Sectorlisp Shell";
-        packages = with pkgs; with llvmPackages_19; [
-          gdb
-          blink
-          binutils
-          git
-          clang-tools
-          meson
-          ninja
-          pkg-config
-        ];
-      };
-      # defaultPackage.x86_64-linux = stdenv.mkDerivation {
-      #   name = "KVM Sectorlisp";
-      #   version = "1.0.0";
-      #   src = ./.;
-      # };
+      packages = forEachSystem (system: {
+        devenv-up = self.devShells.${system}.default.config.procfileScript;
+      });
+
+      devShells = forEachSystem
+        (system:
+          let
+            pkgs = nixpkgs.legacyPackages.${system};
+          in
+          {
+            default = devenv.lib.mkShell {
+              inherit inputs pkgs;
+              modules = [
+                {
+                  packages = with pkgs; [
+                    lldb_18
+                    libunwind
+                  ];
+                  # https://devenv.sh/reference/options/
+                  languages.rust = {
+                    enable = true;
+                    # https://devenv.sh/reference/options/#languagesrustchannel
+                    channel = "nightly";
+
+                    components = [ "rustc" "cargo" "clippy" "rustfmt" "rust-analyzer" ];
+                  };
+                }
+              ];
+            };
+          });
     };
 }
