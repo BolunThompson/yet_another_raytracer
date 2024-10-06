@@ -1,8 +1,8 @@
 // src/render.rs
 
-use std::error::Error;
+use std::{error::Error, f32::consts::PI};
 
-use crate::ray::Ray;
+use crate::{ray::Ray, Color, Hittable, Point3, Vec3};
 use glam::Vec3A;
 use image::RgbImage;
 use itertools::iproduct;
@@ -19,13 +19,13 @@ pub struct RenderConfig {
     pub focal_length: f32,
     pub viewport_height: f32,
     pub viewport_width: f32,
-    pub camera_center: Vec3A,
-    pub viewport_u: Vec3A,
-    pub viewport_v: Vec3A,
-    pub pixel_delta_u: Vec3A,
-    pub pixel_delta_v: Vec3A,
-    pub viewport_upper_left: Vec3A,
-    pub pixel00_loc: Vec3A,
+    pub camera_center: Point3,
+    pub viewport_u: Vec3,
+    pub viewport_v: Vec3,
+    pub pixel_delta_u: Vec3,
+    pub pixel_delta_v: Vec3,
+    pub viewport_upper_left: Point3,
+    pub pixel00_loc: Point3,
 }
 
 impl RenderConfig {
@@ -37,16 +37,21 @@ impl RenderConfig {
         let imgsize = (wt * ht * 3) as usize;
         let viewport_height = 2.0;
         let viewport_width = viewport_height * (wt as f32 / ht as f32);
-        let camera_center = Vec3A::ZERO;
+        let camera_center: Point3 = Vec3A::ZERO.into();
         let focal_length = 1.0;
 
-        let viewport_u = Vec3A::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3A::new(0.0, -viewport_height, 0.0);
-        let pixel_delta_u = viewport_u / wt as f32;
-        let pixel_delta_v = viewport_v / ht as f32;
-        let viewport_upper_left =
-            camera_center - Vec3A::new(0.0, 0.0, focal_length) - viewport_u / 2.0 - viewport_v;
-        let pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
+        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+        let pixel_delta_u: Vec3 = (viewport_u.0 / wt as f32).into();
+        let pixel_delta_v: Vec3 = (viewport_v.0 / ht as f32).into();
+        let viewport_upper_left = Point3(
+            camera_center.0
+                - Vec3A::new(0.0, 0.0, focal_length)
+                - viewport_u.0 / 2.0
+                - viewport_v.0,
+        );
+        let pixel00_loc: Point3 =
+            (viewport_upper_left.0 + 0.5 * (pixel_delta_u.0 + pixel_delta_v.0)).into();
 
         Self {
             out,
@@ -80,26 +85,19 @@ impl RenderConfig {
     }
 }
 
-pub fn hit_sphere(center: Vec3A, radius: f32, r: &Ray) -> f32 {
-    let oc = center - r.origin;
-    let a = r.direction.length_squared();
-    let h = r.direction.dot(oc);
-    let c = oc.length_squared() - radius * radius;
-    let discriminant = h * h - a * c;
-    if discriminant < 0.0 {
-        -1.0
+pub fn ray_color(world: &dyn Hittable, r: &Ray) -> Color {
+    // FIX: No objects are ever getting hit
+    if let Some(hr) = world.hit(r, 0.0, f32::INFINITY) {
+        eprintln!("HIT");
+        Color(0.5 * (hr.normal.0 + Vec3A::new(1.0, 1.0, 1.0)))
     } else {
-        (h - discriminant.sqrt()) / a
+        let unit_direction = r.direction.0.normalize();
+        let a = 0.5 * (unit_direction.y + 1.0);
+        Color(((1.0 - a) * Vec3A::ONE + a * Vec3A::new(0.5, 0.7, 1.0)).into())
     }
 }
 
-pub fn ray_color(r: &Ray) -> Vec3A {
-    let t = hit_sphere(Vec3A::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
-        let n = (r.at(t) - Vec3A::new(0.0, 0.0, -1.0)).normalize();
-        return 0.5 * (n + Vec3A::ONE);
-    }
-    let unit_direction = r.direction.normalize();
-    let a = 0.5 * (unit_direction.y + 1.0);
-    (1.0 - a) * Vec3A::ONE + a * Vec3A::new(0.5, 0.7, 1.0)
+// TODO: where else to put this?
+pub fn deg_to_rad(degrees: f32) -> f32 {
+    degrees * PI / 180.0
 }
