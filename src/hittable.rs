@@ -1,9 +1,11 @@
 use crate::{Point3, Ray, Vec3};
 
+#[derive(Copy, PartialEq, Eq, Debug, Clone)]
 pub enum Facing {
     Front,
     Back,
 }
+
 impl Facing {
     pub fn calculate(ray: &Ray, outward_normal: &Vec3) -> Facing {
         if ray.direction.0.dot(outward_normal.0) < 0.0 {
@@ -14,6 +16,7 @@ impl Facing {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct HitRecord {
     // multiplier of the ray direction, indicating the hit position.
     pub t: f32,

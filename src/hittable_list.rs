@@ -11,14 +11,9 @@ impl Hittable for HittableList {
     fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
         self.iter().fold(None, |closest, v| {
             closest
-                .and_then(|closest_i| {
-                    v.hit(r, ray_tmin, closest_i.t).map(|hr| {
-                        if hr.t < closest_i.t {
-                            hr
-                        } else {
-                            closest_i
-                        }
-                    })
+                .map(|closest_i| match v.hit(r, ray_tmin, closest_i.t) {
+                    Some(hr) if hr.t < closest_i.t => hr,
+                    _ => closest_i,
                 })
                 .or_else(|| v.hit(r, ray_tmin, ray_tmax))
         })

@@ -15,7 +15,7 @@ impl Sphere {
 impl Hittable for Sphere {
     fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
         // oc is another intuitively meaningless but algebraically derived values
-        // used in the calcuatoin for simplicity.
+        // used in the calculation for simplicity.
         let oc = self.center.0 - r.origin.0;
         let a = r.direction.0.length_squared();
         let h = r.direction.0.dot(oc);
@@ -27,15 +27,16 @@ impl Hittable for Sphere {
         }
         let sqrtd = discriminant.sqrt();
         let mut root = (h - sqrtd) / a;
-        if root <= ray_tmin || ray_tmax >= root {
-            root = (h - sqrtd) / a;
-            if root <= ray_tmin || ray_tmax >= root {
+        if root <= ray_tmin || ray_tmax <= root {
+            root = (h + sqrtd) / a;
+            if root <= ray_tmin || ray_tmax <= root {
                 return None;
             }
         }
         let point = r.at(root);
-        let normal: Vec3 = ((r.at(root).0 - c) / self.radius).into();
+        let mut normal: Vec3 = ((point.0 - self.center.0) / self.radius).into();
         let facing = Facing::calculate(r, &normal);
+        normal.set_facing(facing);
         Some(HitRecord {
             t: root,
             point,

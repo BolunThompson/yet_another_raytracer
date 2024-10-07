@@ -1,5 +1,3 @@
-// src/render.rs
-
 use std::{error::Error, f32::consts::PI};
 
 use crate::{ray::Ray, Color, Hittable, Point3, Vec3};
@@ -48,7 +46,7 @@ impl RenderConfig {
             camera_center.0
                 - Vec3A::new(0.0, 0.0, focal_length)
                 - viewport_u.0 / 2.0
-                - viewport_v.0,
+                - viewport_v.0 / 2.0,
         );
         let pixel00_loc: Point3 =
             (viewport_upper_left.0 + 0.5 * (pixel_delta_u.0 + pixel_delta_v.0)).into();
@@ -86,9 +84,7 @@ impl RenderConfig {
 }
 
 pub fn ray_color(world: &dyn Hittable, r: &Ray) -> Color {
-    // FIX: No objects are ever getting hit
     if let Some(hr) = world.hit(r, 0.0, f32::INFINITY) {
-        eprintln!("HIT");
         Color(0.5 * (hr.normal.0 + Vec3A::new(1.0, 1.0, 1.0)))
     } else {
         let unit_direction = r.direction.0.normalize();
