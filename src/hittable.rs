@@ -1,4 +1,7 @@
-use crate::{Point3, Ray, Vec3};
+use core::range::RangeInclusive;
+use std::rc::Rc;
+
+use crate::{material::Material, Point3, Ray, Vec3};
 
 #[derive(Copy, PartialEq, Eq, Debug, Clone)]
 pub enum Facing {
@@ -16,18 +19,19 @@ impl Facing {
     }
 }
 
-#[derive(Debug, PartialEq)]
 pub struct HitRecord {
     // multiplier of the ray direction, indicating the hit position.
     pub t: f32,
     pub point: Point3,
     pub normal: Vec3,
     pub facing: Facing,
+
+    pub mat: Rc<dyn Material>,
 }
 
 pub trait Hittable {
     #[allow(unused_variables)]
-    fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, ray_t: RangeInclusive<f32>) -> Option<HitRecord> {
         None
     }
 }

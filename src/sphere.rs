@@ -1,19 +1,27 @@
-use crate::{Facing, HitRecord, Hittable, Point3, Ray, Vec3};
+use core::range::RangeInclusive;
+use std::rc::Rc;
+
+use crate::{material::Material, Facing, HitRecord, Hittable, Point3, Ray, Vec3};
 
 pub struct Sphere {
     center: Point3,
     radius: f32,
+    mat: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f32) -> Sphere {
+    pub fn new(center: Point3, radius: f32, mat: Rc<dyn Material>) -> Sphere {
         let radius = radius.max(0.0);
-        Sphere { center, radius }
+        Sphere {
+            center,
+            radius,
+            mat,
+        }
     }
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, ray_t: RangeInclusive<f32>) -> Option<HitRecord> {
         // oc is another intuitively meaningless but algebraically derived values
         // used in the calculation for simplicity.
         let oc = self.center.0 - r.origin.0;
@@ -27,9 +35,9 @@ impl Hittable for Sphere {
         }
         let sqrtd = discriminant.sqrt();
         let mut root = (h - sqrtd) / a;
-        if root <= ray_tmin || ray_tmax <= root {
+        if !ray_t.contains(&root) {
             root = (h + sqrtd) / a;
-            if root <= ray_tmin || ray_tmax <= root {
+            if !ray_t.contains(&root) {
                 return None;
             }
         }
@@ -42,6 +50,7 @@ impl Hittable for Sphere {
             point,
             normal,
             facing,
+            mat: self.mat.clone(),
         })
     }
 }
